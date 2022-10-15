@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+using TMPro;
 
 public class MainManager : MonoBehaviour
 {
+    // Make an instance of this class (we can now call it by 'MainManager.Instance')
+    public static MainManager Instance;
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
@@ -14,10 +18,32 @@ public class MainManager : MonoBehaviour
     public GameObject GameOverText;
 
     private bool m_Started = false;
-    private int m_Points;
+    public int m_Points;
 
     private bool m_GameOver = false;
+    public TextMeshProUGUI Score;
 
+    public string bestPlayerName;
+    public int bestScore;
+
+    private void Awake()
+    {
+
+        // Check if there is already an instance of this game object (singleton ---> single instance)
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        // Assign (store the data of) 'This' class to the instance
+        Instance = this;
+        // Do not destroy this game object when loading or unloading a new scene
+        DontDestroyOnLoad(gameObject);
+
+        Score.text = "High Score: " + bestPlayerName + " - " + bestScore;
+
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -40,6 +66,7 @@ public class MainManager : MonoBehaviour
 
     private void Update()
     {
+
         if (!m_Started)
         {
             if (Input.GetKeyDown(KeyCode.Space))
@@ -68,8 +95,29 @@ public class MainManager : MonoBehaviour
         ScoreText.text = $"Score : {m_Points}";
     }
 
+    void UpdateScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            bestPlayerName = data.nameStored;
+            bestScore = data.highScoreStored;
+
+            Debug.Log("The name decoded: " + bestPlayerName);
+            Debug.Log("The Score decoded: " + bestScore);
+        }
+
+        Score.text = "High Score: " + bestPlayerName + " - " + bestScore;
+    }
+
     public void GameOver()
     {
+        PercistanceVariables.Instance.StoreHighScore(m_Points);
+        UpdateScore();
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
