@@ -8,6 +8,7 @@ using UnityEditor;
 
 public class MenuUI : MonoBehaviour
 {
+    public string nameInput;
     public void StartNew()
     {
         // Load Main Scene
@@ -32,5 +33,11 @@ public class MenuUI : MonoBehaviour
         
         #endif
 
+    }
+
+    public void ReadNameInput(string name)
+    {
+        nameInput = name;
+        Debug.Log(nameInput);
     }
 }
