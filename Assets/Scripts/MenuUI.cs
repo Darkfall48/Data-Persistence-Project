@@ -20,7 +20,7 @@ public class MenuUI : MonoBehaviour
     {
         playButton.interactable = false;
         PercistanceVariables.Instance.LoadGameRank();
-        highscoreText.text = $"Highscore - {PercistanceVariables.Instance.bestPlayer.ToUpper()}: {PercistanceVariables.Instance.bestScore}";
+        highscoreText.text = $"Highscore - {PercistanceVariables.Instance.bestPlayer.ToUpper()} : {PercistanceVariables.Instance.bestScore}";
     }
 
     public void SaveText()
