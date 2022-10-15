@@ -3,49 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using System.IO;
 using TMPro;
+using System.IO;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class MainManager : MonoBehaviour
 {
-    // Make an instance of this class (we can now call it by 'MainManager.Instance')
-    public static MainManager Instance;
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
+    public Text currentScoreText;
+    public TextMeshProUGUI bestScoreText;
     public GameObject GameOverText;
 
     private bool m_Started = false;
-    public int m_Points;
+    private int m_Points;
 
-    private bool m_GameOver = false;
-    public TextMeshProUGUI Score;
 
-    public string bestPlayerName;
-    public int bestScore;
+    static public bool m_GameOver = false;
+    static public int bestScore;
+    static public string bestPlayer;
 
     private void Awake()
     {
-
-        // Check if there is already an instance of this game object (singleton ---> single instance)
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        // Assign (store the data of) 'This' class to the instance
-        Instance = this;
-        // Do not destroy this game object when loading or unloading a new scene
-        DontDestroyOnLoad(gameObject);
-
-        Score.text = "High Score: " + bestPlayerName + " - " + bestScore;
-
+        PercistanceVariables.Instance.LoadGameRank();
+        bestPlayer = PercistanceVariables.Instance.bestPlayer;
+        bestScore = PercistanceVariables.Instance.bestScore;
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         const float step = 0.6f;
@@ -62,11 +50,11 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        SetBestPlayer();
     }
 
     private void Update()
     {
-
         if (!m_Started)
         {
             if (Input.GetKeyDown(KeyCode.Space))
@@ -92,34 +80,52 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
-    }
-
-    void UpdateScore()
-    {
-        string path = Application.persistentDataPath + "/savefile.json";
-
-        if (File.Exists(path))
-        {
-            string json = File.ReadAllText(path);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
-
-            bestPlayerName = data.nameStored;
-            bestScore = data.highScoreStored;
-
-            Debug.Log("The name decoded: " + bestPlayerName);
-            Debug.Log("The Score decoded: " + bestScore);
-        }
-
-        Score.text = "High Score: " + bestPlayerName + " - " + bestScore;
+        currentScoreText.text = $"Score : {m_Points}";
     }
 
     public void GameOver()
     {
-        PercistanceVariables.Instance.StoreHighScore(m_Points);
-        UpdateScore();
         m_GameOver = true;
+        CheckBestPlayer();
         GameOverText.SetActive(true);
     }
 
+    private void CheckBestPlayer()
+    {
+
+        if (m_Points > bestScore)
+        {
+            bestPlayer = PercistanceVariables.Instance.currentPlayer;
+            bestScore = m_Points;
+
+            bestScoreText.text = $"Best Score - {bestPlayer.ToUpper()}: {bestScore}";
+            PercistanceVariables.Instance.SaveGameRank(bestPlayer, bestScore);
+        }
+    }
+
+    private void SetBestPlayer()
+    {
+        if (bestPlayer == null && bestScore == 0)
+        {
+            bestScoreText.text = "";
+        }
+        else
+        {
+            bestScoreText.text = $"Best Score - {bestPlayer.ToUpper()}: {bestScore}";
+        }
+    }
+
+    public void ChangeScene()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void Exit()
+    {
+#if UNITY_EDITOR
+        EditorApplication.ExitPlaymode();
+#else
+        Application.Quit(); // original code to quit Unity player
+#endif
+    }
 }
